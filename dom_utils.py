@@ -24,3 +24,12 @@ def remove_ws(node):
     for node in condemned:
         node.parentNode.removeChild(node)
         node.unlink()
+        
+
+def get_root_element(document):
+    '''
+    Get the root element of a document.
+    '''
+    for child in document.childNodes:
+        if child.nodeType == child.ELEMENT_NODE:
+            return child

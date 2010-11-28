@@ -11,14 +11,14 @@ interested in.
 @author RGBz
 '''
 
-from minidom_with_bug_fix import parse, parseString
+from xml.dom.minidom import parse, parseString
 from datetime import datetime
-from dom_utils import remove_ws
+from dom_utils import remove_ws, get_root_element
 import sys
 import logging
 
 # Set up the logger
-logging.basicConfig(level=logging.DEBUG,
+logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     filename='skimmer.log',
                     filemode='w')
@@ -46,17 +46,25 @@ class SchemaSkimmer(object):
         '''
         Constructor that loads up an XSD and initializes some lists on XSD data.
         '''
-        logging.info('Started creating skimmer')
+        logging.info('Ok, so now I\'m  creating a skimmer')
         
         self.all_xsd_type_elements = []
         self.targeted_xsd_type_elements = []
         
         self.all_xsd_element_elements = []
         self.targeted_xsd_element_elements = []
-
-        logging.info('Started loading ' + xsd_filename)
-        self.doc = parse(xsd_filename)
-        logging.info('Finished loading ' + xsd_filename)        
+        
+        logging.info('As part of that I\'m  loading ' + xsd_filename)
+        
+        try:
+            self.doc = parse(xsd_filename)    
+        except IOError as e:
+            invalid_command('Gah!\nWhat are you trying to do?\nKill me?' \
+                     + xsd_filename + ' is either not available or not an XSD.')
+                     
+        self.schema_element = get_root_element(self.doc)
+                     
+        logging.info('Booyah, all done loading ' + xsd_filename)
 
         for element in self.getElementsByTagName(self.doc, 'element'):
             if element.hasAttribute('name'):
@@ -71,14 +79,15 @@ class SchemaSkimmer(object):
         for group in self.getElementsByTagName(self.doc, 'group'):
             self.all_xsd_type_elements.append(group)
         
-        logging.info('Finished creating skimmer')
+        logging.info('Booyah, all done creating a skimmer')
         
     def getElementsByTagName(self, root, tag_name):
         '''
         Simplifies getElementsByTagName calls by removing the need to know
         namespaces or prefixes.
         '''
-        return root.getElementsByTagNameNS(self.doc.namespaceURI, tag_name)
+        return root.getElementsByTagNameNS(self.schema_element.namespaceURI,
+                                           tag_name)
 
     def getTypeByName(self, type_name):
         '''
@@ -108,7 +117,7 @@ class SchemaSkimmer(object):
         # If we don't already have it in our list, add it
         if type not in self.targeted_xsd_type_elements:
 
-            logging.info('Adding ' + type.localName + ' ' + type_name)
+            logging.debug('Adding ' + type.localName + ' ' + type_name)
             self.targeted_xsd_type_elements.append(type)
 
             # If the element is complex, add its children
@@ -122,21 +131,22 @@ class SchemaSkimmer(object):
                         self.addElementByName(element.getAttribute('name'))
                 
                 # Handle groups
-                for group in getElementsByTagName(type, 'group'):
+                for group in self.getElementsByTagName(type, 'group'):
                     if group.hasAttribute('ref'):
                         self.addTypeByName(group.getAttribute('ref'))
                     elif element.hasAttribute('name'):
                         self.addTypeByName(element.getAttribute('type'))
                         
                 # Handle attributes
-                for attribute in getElementsByTagName(type, 'attribute'):
+                for attribute in self.getElementsByTagName(type, 'attribute'):
                     self.addTypeByName(attribute.getAttribute('type'))
                     
                 # Handle super class extension
-                if len(getElementsByTagName(type, 'complexContent')) > 0:
-                    alter_elems = getElementsByTagName(type, 'extension')
+                if len(self.getElementsByTagName(type, 'complexContent')) > 0:
+                    alter_elems = self.getElementsByTagName(type, 'extension')
                     if len(alter_elems) == 0:
-                        alter_elems = getElementsByTagName(type, 'restriction')
+                        alter_elems = self.getElementsByTagName(type,
+                                                                'restriction')
                     self.addTypeByName(alter_elems[0].getAttribute('base'))
 
     def addElementByName(self, element_name):
@@ -146,33 +156,21 @@ class SchemaSkimmer(object):
         for element in self.all_xsd_element_elements:
             if element.getAttribute('name') == element_name:
                 if element not in self.targeted_xsd_element_elements:
-                    logging.info('Adding element \''+ element_name + '\'')
+                    logging.debug('Adding element \''+ element_name + '\'')
                     self.targeted_xsd_element_elements.append(element)
-                    self.addTargetedType(element.getAttribute('type'))
-
-    def filterByElementNames(self, element_names):
-        '''
-        Add types to the targeted types list starting with the root
-        elements.
-        '''
-        logging.info('Started skimming by element names ' + str(element_names))
-        
-        for element_name in element_names:
-            self.addElementByName(element_name)
-
-        logging.info('Finished skimming by element names ' + str(element_names))
+                    self.addTypeByName(element.getAttribute('type'))
             
     def reduce(self):
         '''
         Remove all non-targeted elements and types.
         '''
-        logging.info('Started removing uneeded nodes')
+        logging.info('Ok, so now I\'m removing uneeded nodes')
         
         dif = set(self.all_xsd_element_elements).difference(
                 set(self.targeted_xsd_element_elements))
         
         for elem in dif:
-            logging.info('Removing ' + elem.localName + ' '
+            logging.debug('Removing ' + elem.localName + ' '
                     + elem.getAttribute('name'))
             elem.parentNode.removeChild(elem)
         
@@ -180,11 +178,11 @@ class SchemaSkimmer(object):
                 set(self.targeted_xsd_type_elements))
         
         for elem in dif:
-            logging.info('Removing ' + elem.localName + ' '
+            logging.debug('Removing ' + elem.localName + ' '
                     + elem.getAttribute('name'))
             elem.parentNode.removeChild(elem)
             
-        logging.info('Finished removing uneeded nodes')
+        logging.info('Booyah, all done removing uneeded nodes')
 
     def writeToXml(self, filename):
         '''
@@ -192,95 +190,105 @@ class SchemaSkimmer(object):
         '''
         self.reduce()
         
-        # Log the element details
-        for type in skimmer.targeted_xsd_type_elements:
-            if type.localName == 'simpleType':
-                logging.info(type.localName + ' ' + type.getAttribute('name'))
-                
-                for elem in type.childNodes:
-                    if elem.nodeType == elem.ELEMENT_NODE \
-                       and elem.hasAttribute('base'):
-                        logging.info(elem.getAttribute('base'))
-
-            else:
-                if len(skimmer.getElementsByTagName(type, 'simpleContent')) > 0:
-                    logging.info(type.localName + ' '
-                                  + type.getAttribute('name') + ' ')
-                    
-                    for elem in skimmer.getElementsByTagName(type,
-                            'simpleContent')[0].childNodes:
-                        if elem.nodeType == elem.ELEMENT_NODE \
-                           and elem.hasAttribute('base'):
-                            logging.info(elem.getAttribute('base'))
-                else:
-                    logging.info(type.localName + ' '
-                                  + type.getAttribute('name') + '\n')
-    
-        for element in skimmer.targeted_xsd_element_elements:
-            logging.info(element.localName + ' '
-
-                          + element.getAttribute('name')
-                          + ' type ' + element.getAttribute('type'))
-        
-        logging.info('Started removing whitespace nodes')
+        logging.info('Ok, so now I\'m  removing whitespace nodes '
+                     + '(I\'d go for a walk this usually takes a while)')
         
         remove_ws(self.doc)
         
-        logging.info('Finished removing whitespace nodes')
+        logging.info('Booyah, all done removing whitespace nodes')
 
-        logging.info('Started writing new XSD to ' + filename)
+        logging.info('Ok, so now I\'m  writing new XSD to ' + filename)
         
         with open(filename, 'w') as f:
-            f.write(self.doc.toprettyxml(indent='    ').encode('utf-8'))
+            try:
+                f.write(self.doc.toprettyxml(indent='    ').encode('utf-8'))
+            except AttributeError as e:
+                logging.error('Shoot!  It looks like your XSD contains an '
+                              + 'element that triggered a weird bug in '
+                              + 'Python\'s minidom.py code.  This bug is '
+                              + 'currently resolved but hasn\'t yet made it '
+                              + 'into a release.  In the short term, you can '
+                              + 'copy the included minidom.py over yours in '
+                              + 'your Python library folder to fix the issue.'
+                              + '\n\nFor reference, you can see the bug and '
+                              + 'its details here: '
+                              + 'http://bugs.python.org/issue5762')
+                exit()
 
-        logging.info('Finished writing new XSD to ' + filename)
+        logging.info('Booyah, all done writing new XSD to ' + filename)
 
 
-def invalid_command():
+def invalid_command(message):
     '''
     Print how to do the commands correctly.
     '''
-    print('Nope.')
-    print('You\'re doing it wrong.')
-    print('Instead, do it like this:')
+    print(message)
+    print('')
+    print('Relax, take a breath and this time do it like this:')
     print('$> python schema_skimmer.py [XSD_FILENAME] [ELEMENT_NAME_1] ...')
+    print('')
     print('Or like this (if you have a newline delimited file listing element '
           + 'names):')
     print('$> python schema_skimmer.py -f [XSD_FILENAME] '
           + '[ELEMENT_LIST_FILENAME]')
+    print('')
+    exit()
 
 
-# Make sure we have more than two command line arguments
-if len(sys.argv) > 2:
+def main(args):
+    '''
+    Main method, runs the program.
+    '''
+    # Make sure we have more than two command line arguments
+    if len(args) <= 2:
+        invalid_command('Nope!\nYou\'re doing it wrong.')
+    
     start = datetime.now()
-    
-    logging.info('Started at ' + str(start))
-    
-    # Load up the XSD
-    skimmer = SchemaSkimmer(sys.argv[1])
-    
+
+    logging.info('Looks like I\'m starting at ' + str(start))
+
+    xsd_filename = None
+    element_names = []
+
     # If this is file based, load up the file
-    if sys.argv[2] == '-f':
-        if len(sys.argv) > 3:
-            invalid_command()
+    if args[1] == '-f':
+        xsd_filename = args[2]
+        if not len(args) == 4:
+            invalid_command('Aah!\nWhat\'re you doing?\n'
+                            + 'You need to specify a filename for the list '
+                            + 'of elements if you use the -f mode.')
+        with open(args[3], 'r') as f:
+            for line in f:
+                element_names.append(line.strip())
         
-        else:
-            with open(sys.argv[3], 'r') as f:
-                for line in f:
-                    skimmer.addElementByName(line.strip())
-    
+        logging.info('Just loaded up ' + args[3])
+                    
     # Otherwise use the element names from the command line
     else:
-        for element_name in sys.argv[2:]:
-            skimmer.addElementByName(element_name)
+        xsd_filename = args[1]
+        for element_name in args[2:]:
+            element_names.append(element_name)
+
+    # Load up the XSD
+    skimmer = SchemaSkimmer(xsd_filename)
     
+    logging.info('Ok, so now I\'m skimming out the elements you asked for and '
+                 + 'the types they require')
+    
+    # Skim on each element you want
+    for name in element_names:
+        skimmer.addElementByName(name)
+
     # Write out the file with a new extension
-    skimmer.writeToXml(sys.argv[1].replace('.xsd', '-reduced.xsd'))
+    skimmed_xsd_filename = xsd_filename[:xsd_filename.rindex('.')] \
+                           + '-skimmed.xsd'
+    skimmer.writeToXml(skimmed_xsd_filename)
     
     finish = datetime.now()
-    
-    logging.info('Finished at ' + str(finish))
-    logging.info('Duration ' + str(finish - start))
-    
-else:
-    invalid_command()
+    logging.info('Booyah, all done at ' + str(finish))
+    logging.info('It only took me ' + str(finish - start))
+
+
+# Run the main method
+main(sys.argv)
+
