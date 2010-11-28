@@ -16,14 +16,14 @@ empower yourself with
       |_____/|_|\_\_|_| |_| |_|_| |_| |_|\___|_|  (_)
 
 Schema Skimmer uses the latest in XSD skimming technology to deliver to you a
-BRAND NEW XSD containing only the elements and types you need.
+BRAND NEW XSD containing ONLY the elements and types you need!
 
 You simply run the Schema Skimmer Python program by giving it the name of an XSD
 file and a list of XSD elements you'd like to include as seen here:
 
 $> python schema_skimmer.py horribly-long-schema.xsd SomeElementName AnotherElementName AndYesYetAnotherElementName
 
-OR YOU CAN USE A FILE TO LIST YOUR ELEMENT NAMES!
+OR YOU CAN USE A FILE TO LIST YOUR ELEMENT NAMES!!!
 
 You can pull this fancy feat off in front of guests by using the fantastic -f
 option:
@@ -37,3 +37,6 @@ SomeElementName
 AnotherElementName
 AndYesYetAnotherElementName
 
+Yes folks, it's just THAT simple!
+
+Grab your copy of Schema Skimmer today!
