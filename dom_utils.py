@@ -1,7 +1,7 @@
 '''
 Set of useful DOM utilities.
 
-@author modified snippets from various people
+@author RGBz
 '''
 
 
@@ -23,7 +23,6 @@ def remove_ws(node):
     # Then actually remove them
     for node in condemned:
         node.parentNode.removeChild(node)
-        node.unlink()
         
 
 def get_root_element(document):
