@@ -201,16 +201,18 @@ class SchemaSkimmer(object):
         
         with open(filename, 'w') as f:
             try:
-                f.write(self.doc.toprettyxml(indent='    ').encode('utf-8'))
+                f.write(self.doc.toprettyxml(indent='  ').encode('utf-8'))
             except AttributeError as e:
                 logging.error('Shoot!  It looks like your XSD contains an '
                               + 'element that triggered a weird bug in '
                               + 'Python\'s minidom.py code.  This bug is '
                               + 'currently resolved but hasn\'t yet made it '
                               + 'into a release.  In the short term, you can '
-                              + 'copy the included minidom.py over yours in '
-                              + 'your Python library folder to fix the issue.'
-                              + '\n\nFor reference, you can see the bug and '
+                              + 'copy the included '
+                              + 'in_case_of_emergency/minidom.py over your '
+                              + 'minidom.py in your Python library folder to '
+                              + 'fix the issue.\n\n'
+                              + 'For reference, you can see the bug and '
                               + 'its details here: '
                               + 'http://bugs.python.org/issue5762')
                 exit()
