@@ -31,10 +31,10 @@ option:
 $> python schema_skimmer.py -f horribly-long-schema.xsd SomeFileThatContainsElements.txt
 
 Of course your SomeFileThatContainsElements.txt will need to have each element
-name on a separate line like so:
+name separated by whitespace (yes you can make it as messy as you want!) line
+like so:
 
-SomeElementName
-AnotherElementName
+SomeElementName            AnotherElementName
 AndYesYetAnotherElementName
 
 Yes folks, it's just THAT simple!

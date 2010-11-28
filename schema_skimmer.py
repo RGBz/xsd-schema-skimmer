@@ -260,8 +260,7 @@ def main(args):
                             + 'You need to specify a filename for the list '
                             + 'of elements if you use the -f mode.')
         with open(args[3], 'r') as f:
-            for line in f:
-                element_names.append(line.strip())
+            element_names = f.read().split()
         
         logging.info('Just loaded up ' + args[3])
                     
