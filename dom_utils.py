@@ -27,7 +27,7 @@ def remove_ws(node):
 
 def get_root_element(document):
     '''
-    Get the root element of a document.
+    Get the root element (first element child) of a document.
     '''
     for child in document.childNodes:
         if child.nodeType == child.ELEMENT_NODE:
