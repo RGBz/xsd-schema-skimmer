@@ -1,0 +1,39 @@
+Trying to perform some O/XML mapping but the XSD you're mapping from is too big?
+
+Don't waste your time reading through lines and lines of frustrating XML,
+empower yourself with
+   _____      _                          
+  / ____|    | |                         
+ | (___   ___| |__   ___ _ __ ___   __ _ 
+  \___ \ / __| '_ \ / _ \ '_ ` _ \ / _` |
+  ____) | (__| | | |  __/ | | | | | (_| |
+ |_____/ \___|_| |_|\___|_| |_| |_|\__,_|
+        _____ _    _                               _ 
+       / ____| |  (_)                             | |
+      | (___ | | ___ _ __ ___  _ __ ___   ___ _ __| |
+       \___ \| |/ / | '_ ` _ \| '_ ` _ \ / _ \ '__| |
+       ____) |   <| | | | | | | | | | | |  __/ |  |_|
+      |_____/|_|\_\_|_| |_| |_|_| |_| |_|\___|_|  (_)
+
+Schema Skimmer uses the latest in XSD skimming technology to deliver to you a
+BRAND NEW XSD containing only the elements and types you need.
+
+You simply run the Schema Skimmer Python program by giving it the name of an XSD
+file and a list of XSD elements you'd like to include as seen here:
+
+$> python schema_skimmer.py horribly-long-schema.xsd SomeElementName AnotherElementName AndYesYetAnotherElementName
+
+OR YOU CAN USE A FILE TO LIST YOUR ELEMENT NAMES!
+
+You can pull this fancy feat off in front of guests by using the fantastic -f
+option:
+
+$> python schema_skimmer.py -f horribly-long-schema.xsd SomeFileThatContainsElements.txt
+
+Of course your SomeFileThatContainsElements.txt will need to have each element
+name on a separate line like so:
+
+SomeElementName
+AnotherElementName
+AndYesYetAnotherElementName
+
