@@ -19,9 +19,9 @@ import logging
 
 # Set up the logger
 logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    filename='skimmer.log',
-                    filemode='w')
+        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+        filename='skimmer.log',
+        filemode='w')
 
 # define a Handler which writes INFO messages or higher to the sys.stderr
 console = logging.StreamHandler()
@@ -62,7 +62,7 @@ class SchemaSkimmer(object):
                      
         self.schema_element = get_root_element(self.doc)
                      
-        logging.info('Booyah, all done loading ' + xsd_filename)
+        logging.info('Yay!  all done loading ' + xsd_filename)
 
         for element in self.getElementsByTagName(self.doc, 'element'):
             if element.hasAttribute('name'):
@@ -77,7 +77,7 @@ class SchemaSkimmer(object):
         for group in self.getElementsByTagName(self.doc, 'group'):
             self.all_xsd_type_elements.append(group)
         
-        logging.info('Booyah, all done creating a skimmer')
+        logging.info('Yay!  all done creating a skimmer')
         
     def getElementsByTagName(self, root, tag_name):
         '''
@@ -142,7 +142,10 @@ class SchemaSkimmer(object):
                     self.addTypeByName(attribute.getAttribute('type'))
                     
                 # Handle super class extension
-                if len(self.getElementsByTagName(type, 'complexContent')) > 0:
+                if len(self.getElementsByTagName(
+                            type, 'complexContent')) > 0 or \
+                        len(self.getElementsByTagName(
+                                type, 'simpleContent')) > 0:
                     alter_elems = self.getElementsByTagName(type, 'extension')
                     if len(alter_elems) == 0:
                         alter_elems = self.getElementsByTagName(type,
@@ -180,7 +183,7 @@ class SchemaSkimmer(object):
                     + elem.getAttribute('name'))
             elem.parentNode.removeChild(elem)
             
-        logging.info('Booyah, all done removing uneeded nodes')
+        logging.info('Yay!  all done removing uneeded nodes')
 
     def writeToXml(self, filename):
         '''
@@ -193,7 +196,7 @@ class SchemaSkimmer(object):
         
         remove_ws(self.doc)
         
-        logging.info('Booyah, all done removing whitespace nodes')
+        logging.info('Yay!  all done removing whitespace nodes')
 
         logging.info('Ok, so now I\'m  writing new XSD to ' + filename)
         
@@ -215,7 +218,7 @@ class SchemaSkimmer(object):
                               + 'http://bugs.python.org/issue5762')
                 exit()
 
-        logging.info('Booyah, all done writing new XSD to ' + filename)
+        logging.info('Yay!  all done writing new XSD to ' + filename)
 
 
 def invalid_command(message):
@@ -286,7 +289,7 @@ def main(args):
     skimmer.writeToXml(skimmed_xsd_filename)
     
     finish = datetime.now()
-    logging.info('Booyah, all done at ' + str(finish))
+    logging.info('Yay!  all done at ' + str(finish))
     logging.info('It only took me ' + str(finish - start))
 
 
