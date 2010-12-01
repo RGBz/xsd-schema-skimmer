@@ -49,10 +49,8 @@ class SchemaSkimmer(object):
         logging.info('Ok, so now I\'m  creating a skimmer')
         
         self.all_xsd_type_elements = []
-        self.targeted_xsd_type_elements = []
-        
         self.all_xsd_element_elements = []
-        self.targeted_xsd_element_elements = []
+        self.targeted_elements = []
         
         logging.info('As part of that I\'m  loading ' + xsd_filename)
         
@@ -115,16 +113,17 @@ class SchemaSkimmer(object):
         type = self.getTypeByName(type_name)
 
         # If we don't already have it in our list, add it
-        if type not in self.targeted_xsd_type_elements:
+        if type not in self.targeted_elements:
 
             logging.debug('Adding ' + type.localName + ' ' + type_name)
-            self.targeted_xsd_type_elements.append(type)
+            self.targeted_elements.append(type)
 
             # If the element is complex, add its children
             if type.localName in ['complexType', 'group']:
                 
                 # Handle elements
                 for element in self.getElementsByTagName(type, 'element'):
+                    self.addElement(element)
                     if element.hasAttribute('ref'):
                         self.addElementByName(element.getAttribute('ref'))
                     elif element.hasAttribute('name'):
@@ -132,6 +131,7 @@ class SchemaSkimmer(object):
                 
                 # Handle groups
                 for group in self.getElementsByTagName(type, 'group'):
+                    self.addElement(group)
                     if group.hasAttribute('ref'):
                         self.addTypeByName(group.getAttribute('ref'))
                     elif element.hasAttribute('name'):
@@ -148,6 +148,11 @@ class SchemaSkimmer(object):
                         alter_elems = self.getElementsByTagName(type,
                                                                 'restriction')
                     self.addTypeByName(alter_elems[0].getAttribute('base'))
+                    
+    def addElement(self, element):
+        if element not in self.targeted_elements:
+            logging.debug('Adding element \''+ str(element) + '\'')
+            self.targeted_elements.append(element)
 
     def addElementByName(self, element_name):
         '''
@@ -155,28 +160,21 @@ class SchemaSkimmer(object):
         '''
         for element in self.all_xsd_element_elements:
             if element.getAttribute('name') == element_name:
-                if element not in self.targeted_xsd_element_elements:
+                if element not in self.targeted_elements:
                     logging.debug('Adding element \''+ element_name + '\'')
-                    self.targeted_xsd_element_elements.append(element)
+                    self.targeted_elements.append(element)
                     self.addTypeByName(element.getAttribute('type'))
-            
+
     def reduce(self):
         '''
         Remove all non-targeted elements and types.
         '''
         logging.info('Ok, so now I\'m removing uneeded nodes')
         
-        dif = set(self.all_xsd_element_elements).difference(
-                set(self.targeted_xsd_element_elements))
-        
-        for elem in dif:
-            logging.debug('Removing ' + elem.localName + ' '
-                    + elem.getAttribute('name'))
-            elem.parentNode.removeChild(elem)
-        
-        dif = set(self.all_xsd_type_elements).difference(
-                set(self.targeted_xsd_type_elements))
-        
+        dif = set(self.all_xsd_element_elements).union(
+                self.all_xsd_type_elements).difference(
+                        set(self.targeted_elements))
+
         for elem in dif:
             logging.debug('Removing ' + elem.localName + ' '
                     + elem.getAttribute('name'))
@@ -254,6 +252,7 @@ def main(args):
 
     # If this is file based, load up the file
     if args[1] == '-f':
+        logging.debug('Reading in elements from' + args[1])
         xsd_filename = args[2]
         if not len(args) == 4:
             invalid_command('Aah!\nWhat\'re you doing?\n'
@@ -268,6 +267,7 @@ def main(args):
     else:
         xsd_filename = args[1]
         for element_name in args[2:]:
+            logging.debug('Adding in requirement for ' + element_name)
             element_names.append(element_name)
 
     # Load up the XSD
