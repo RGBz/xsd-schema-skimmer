@@ -111,6 +111,13 @@ class SchemaSkimmer(object):
 
         # Get our type by its name
         type = self.getTypeByName(type_name)
+        
+        # Make sure the type reference exists
+        if type is None:
+            logging.debug('Doesn\'t look like we have a ' \
+                    + type_name \
+                    + ' to add.  It might be in an external namespace.')
+            return
 
         # If we don't already have it in our list, add it
         if type not in self.targeted_elements:
@@ -151,7 +158,15 @@ class SchemaSkimmer(object):
                         alter_elems = self.getElementsByTagName(type,
                                                                 'restriction')
                     self.addTypeByName(alter_elems[0].getAttribute('base'))
-                    
+
+            elif type.localName in ['simpleType']:
+                # Handle super class extension
+                alter_elems = self.getElementsByTagName(type, 'extension')
+                alter_elems.extend(
+                        self.getElementsByTagName(type, 'restriction'))
+                if len(alter_elems) > 0:
+                    self.addTypeByName(alter_elems[0].getAttribute('base'))
+
     def addElement(self, element):
         if element not in self.targeted_elements:
             logging.debug('Adding element \''+ str(element) + '\'')
